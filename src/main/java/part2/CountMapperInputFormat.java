@@ -16,7 +16,6 @@ public class CountMapperInputFormat extends FileInputFormat<LongWritable, Text> 
 	@Override
 	public RecordReader<LongWritable, Text> createRecordReader(InputSplit input, TaskAttemptContext task)
 			throws IOException, InterruptedException {
-		task.setStatus("Creating Record Reader");
 		return new CountMapperRecordReader();
 	}
 

@@ -26,12 +26,12 @@ public class PrefixRankReducer
 		long denseRank = 1;
 
 		for (CustomKeyValueWritable value : values) {
-			mos.write("prefixSumAndRank", key.getPartition(), new PrefixRankCustomWritable(value.getNumber(),
-					value.getCount(), new LongWritable(prefixSum), new LongWritable(denseRank)), Constants.PrefixSumAndRankOutputPath+"/prefixSumAndRank");
+			mos.write(Constants.PREFIXSUM_NAMED_OUTPUT, key.getPartition(), new PrefixRankCustomWritable(value.getNumber(),
+					value.getCount(), new LongWritable(prefixSum), new LongWritable(denseRank)), Constants.PrefixSumAndRankOutputPath+"/"+Constants.PREFIXSUM_NAMED_OUTPUT);
 			prefixSum += value.getCount().get();	
 			denseRank++;
 		}
-		mos.write("offsets", key.getPartition(), new PrefixRankCustomWritable(new LongWritable(1), new LongWritable(1),
-													new LongWritable(prefixSum), new LongWritable(denseRank - 1)), Constants.OffsetsOutputPath+"/offsets");
+		mos.write(Constants.OFFSETS_NAMED_OUTPUT, key.getPartition(), new PrefixRankCustomWritable(new LongWritable(1), new LongWritable(1),
+													new LongWritable(prefixSum-1), new LongWritable(denseRank - 1)), Constants.OffsetsOutputPath+"/"+Constants.OFFSETS_NAMED_OUTPUT);
 	}
 }

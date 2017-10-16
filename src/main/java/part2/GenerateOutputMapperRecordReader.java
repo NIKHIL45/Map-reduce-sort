@@ -19,7 +19,6 @@ public class GenerateOutputMapperRecordReader extends RecordReader<LongWritable,
 	private LineReader in;
 	private LongWritable key = new LongWritable();
 	private PrefixRankCustomWritable value = new PrefixRankCustomWritable();
-	private Text text = new Text();
 	private int maxLineLength;
 	private long start;
     private long pos;
@@ -43,24 +42,17 @@ public class GenerateOutputMapperRecordReader extends RecordReader<LongWritable,
         boolean skipFirstLine = false;
         if (start != 0) {
             skipFirstLine = true;
-            // Set the file pointer at "start - 1" position.
-            // This is to make sure we won't miss any line
-            // It could happen if "start" is located on a EOL
             --start;
             fileIn.seek(start);
         }
         
         in = new LineReader(fileIn, conf);
         
-        // If first line needs to be skipped, read first line
-        // and stores its content to a dummy Text
         if (skipFirstLine) {
             Text dummy = new Text();
-            // Reset "start" to "start + line offset"
 			start += in.readLine(dummy, 0, (int) Math.min((long) Integer.MAX_VALUE, end - start));
 			
         }
-        // Position is the actual start
         this.pos = start;
 
 	}
@@ -69,22 +61,17 @@ public class GenerateOutputMapperRecordReader extends RecordReader<LongWritable,
 	public boolean nextKeyValue() throws IOException, InterruptedException {
 		int newSize = 0;
 		 
-        // Make sure we get at least one record that starts in this Split
         while (pos < end) {
-            // Read first line and store its content to "value"
+        		Text text = new Text();
 			newSize = in.readLine(text, maxLineLength,
 					Math.max((int) Math.min(Integer.MAX_VALUE, end - pos), maxLineLength));
  
-            // No byte read, seems that we reached end of Split
-            // Break and return false (no key / value)
             if (newSize == 0) {
                 break;
             }
  
-            // Line is read, new position is set
             pos += newSize;
  
-         // Set key and value to be read
             String s = new String(text.getBytes());
             String[] keyValuePair = s.trim().split("\\s+");
             key.set(Long.parseLong(keyValuePair[0]));
@@ -93,8 +80,6 @@ public class GenerateOutputMapperRecordReader extends RecordReader<LongWritable,
             value.setPrefixSum(new LongWritable(Long.parseLong(keyValuePair[3])));
             value.setDenseRank(new LongWritable(Long.parseLong(keyValuePair[4])));
             
-            // Line is lower than Maximum record line size
-            // break and return true (found key / value)
             if (newSize < maxLineLength) {
                 break;
             }
@@ -103,14 +88,10 @@ public class GenerateOutputMapperRecordReader extends RecordReader<LongWritable,
  
          
         if (newSize == 0) {
-            // We've reached end of Split
             key = null;
             value = null;
             return false;
         } else {
-            // Tell Hadoop a new line has been found
-            // key / value will be retrieved by
-            // getCurrentKey getCurrentValue methods
             return true;
         }
 

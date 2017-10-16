@@ -1,39 +1,45 @@
 package part1;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.mapred.InputFormat;
-import org.apache.hadoop.mapred.InputSplit;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RecordReader;
-import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapreduce.InputFormat;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 import common.Constants;
 
-public class GenerateNumbersInputFormat implements InputFormat<LongWritable, NullWritable>{
+public class GenerateNumbersInputFormat extends InputFormat<LongWritable, NullWritable>{
 
-	public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
-		long noOfNumbersToGenerate = job.getLong(Constants.NO_OF_NUMBERS_TO_GENERATE, 0);
-		long noOfNumbersToGenerateBySplit = noOfNumbersToGenerate / numSplits;
+	@Override
+	public List<InputSplit> getSplits(JobContext context) throws IOException, InterruptedException {
 		
-		InputSplit[] splits = new InputSplit[numSplits];
+		Configuration conf = context.getConfiguration();
+		int numSplits = conf.getInt(Constants.NO_OF_MAPPERS_TO_GENERATE_DATA, 0);
 		
-		for(int split = 0; split < numSplits - 1; split++) {
-			splits[split] = new GenerateNumbersInputSplit(split * noOfNumbersToGenerateBySplit, 
-														 noOfNumbersToGenerateBySplit);
+		List<InputSplit> splits = new ArrayList<>();
+		
+		for(int split = 0; split < numSplits; split++) {
+			splits.add(new FakeInputSplit());
 		}
-		splits[numSplits - 1] = new GenerateNumbersInputSplit((numSplits - 1) * noOfNumbersToGenerateBySplit, 
-															noOfNumbersToGenerate - noOfNumbersToGenerateBySplit);
 		
 		return splits;
 	}
 
-	public RecordReader<LongWritable, NullWritable> getRecordReader(InputSplit split, JobConf job, Reporter reporter)
-			throws IOException {
-		return new GenerateNumbersRecordReader();
+	@Override
+	public RecordReader<LongWritable, NullWritable> createRecordReader(InputSplit split, TaskAttemptContext context)
+			throws IOException, InterruptedException {
+		GenerateNumbersRecordReader recordReader = new GenerateNumbersRecordReader();
+		recordReader.initialize(split, context);
+		return recordReader;
 	}
+	
 	
 
 }
